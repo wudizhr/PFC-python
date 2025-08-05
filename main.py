@@ -77,10 +77,12 @@ def makeYbus(baseMVA, bus, branch):
     Bc = stat * branch[:, BR_B]  # 线路充电电纳
 
     # 处理变压器变比和移相器
+    print("tap")
     tap = np.ones(nl, dtype=complex)
     non_zero_tap = np.where(branch[:, TAP] != 0)[0]
     tap[non_zero_tap] = branch[non_zero_tap, TAP]
     tap = tap * np.exp(1j * np.pi / 180 * branch[:, SHIFT])  # 考虑移相器
+    print(tap)
 
     # 计算支路导纳矩阵元素
     Ytt = Ys + 1j * Bc / 2
@@ -133,8 +135,8 @@ def makeYbus(baseMVA, bus, branch):
     print("Ybus")
     print(Ybus)
     Ybus = sparse.csr_matrix(
-        (np.concatenate([Yff, Yft, Ytf, Ytt]),
-         (np.concatenate([f, f, t, t]), np.concatenate([f, t, f, t]))),
+        (np.concatenate([Yff, Yff, -Yff, -Yff]),
+         (np.concatenate([f, t, f, t]), np.concatenate([f, t, t, f]))),
         shape=(nb, nb)  # 注意这里括号的闭合
     ) + sparse.diags(Ysh, 0, shape=(nb, nb))
     print("Ybus")
@@ -142,6 +144,33 @@ def makeYbus(baseMVA, bus, branch):
 
     return Ybus, Yf, Yt
 
+  # (0, 0)	-17.36111111111111j
+  # (0, 3)	(-0+17.36111111111111j)
+  # (1, 1)	-16j
+  # (1, 7)	(-0+16j)
+  # (2, 2)	-17.064846416382252j
+  # (2, 5)	(-0+17.064846416382252j)
+  # (3, 0)	(-0+17.36111111111111j)
+  # (3, 3)	(3.3073789620253065-39.30888872611897j)
+  # (3, 4)	(-1.9421912487147266+10.43168205186793j)
+  # (3, 8)	(-1.36518771331058+11.516095563139931j)
+  # (4, 3)	(-1.9421912487147266+10.43168205186793j)
+  # (4, 4)	(3.2242003871388416-15.840927014229457j)
+  # (4, 5)	(-1.2820091384241148+5.409244962361526j)
+  # (5, 2)	(-0+17.064846416382252j)
+  # (5, 4)	(-1.2820091384241148+5.409244962361526j)
+  # (5, 5)	(2.437096619314212-32.153861805106956j)
+  # (5, 6)	(-1.155087480890097+9.679770426363174j)
+  # (6, 5)	(-1.155087480890097+9.679770426363174j)
+  # (6, 6)	(2.772209954136233-23.30324902327162j)
+  # (6, 7)	(-1.6171224732461358+13.623478596908443j)
+  # (7, 1)	(-0+16j)
+  # (7, 6)	(-1.6171224732461358+13.623478596908443j)
+  # (7, 7)	(2.804726852537284-35.44561313021703j)
+  # (7, 8)	(-1.1876043792911484+5.822134533308591j)
+  # (8, 3)	(-1.36518771331058+11.516095563139931j)
+  # (8, 7)	(-1.1876043792911484+5.822134533308591j)
+  # (8, 8)	(2.5527920926017282-17.338230096448523j)
 
 def bustypes(bus, gen):
     """
@@ -414,7 +443,7 @@ def newtonpf_I_polar(Ybus, Sbus, V0, ref, pv, pq, mpopt=None):
 
 if __name__ == "__main__":
     try:
-        case = parse_matpower_case('case5.m')
+        case = parse_matpower_case('case14.m')
         print("解析成功！")
         print("\nBus数据示例:")
         print(len(case['bus']))  # 打印前两行bus数据
@@ -456,7 +485,7 @@ if __name__ == "__main__":
     #     print(i + 1, V[i])
 
     # Test
-    V, success, iterations = newtonpf_I_polar(Ybus, Sbus, V0, ref, pv, pq, None)
+    # V, success, iterations = newtonpf_I_polar(Ybus, Sbus, V0, ref, pv, pq, None)
     # n = len(V0)
     # V = V0
     # Sb = Sbus(abs(V0))
