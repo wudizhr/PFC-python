@@ -46,7 +46,7 @@ def parse_matpower_case(file_path):
     }
 
 
-def makeYbus(bus, branch):  # 未考虑变压器和移相器
+def makeYbus(bus, branch):
     nb = bus.shape[0]  # 节点数量
     # 计算支路导纳矩阵元素
     stat = branch[:, BR_STATUS]  # 支路状态
@@ -60,11 +60,7 @@ def makeYbus(bus, branch):  # 未考虑变压器和移相器
         if branch[i, TAP] != 0:
             tap[i] = branch[i, TAP]
     tap = tap * np.exp(1j * np.pi / 180 * branch[:, SHIFT])
-    print(tap)
-    # tap
-    # [1. + 0.j 1. + 0.j 1. + 0.j 1. + 0.j 1. + 0.j 1. + 0.j 1. + 0.j
-    #  0.978 + 0.j 0.969 + 0.j 0.932 + 0.j 1. + 0.j 1. + 0.j 1. + 0.j 1. + 0.j
-    #  1. + 0.j 1. + 0.j 1. + 0.j 1. + 0.j 1. + 0.j 1. + 0.j]
+
     # 获取支路连接关系
     j = branch[:, F_BUS].astype(int) - 1
     i = branch[:, T_BUS].astype(int) - 1
@@ -92,7 +88,6 @@ def getBusType(bus):  # bus type (1 - PQ bus, 2 - PV bus, 3 - reference bus, 4 -
     pq = []
     ref = []
     types = bus[:, BUS_TYPE]
-    # print(types)
     for i in range(len(types)):
         if types[i] == 1:
             pq.append(i)
@@ -106,7 +101,6 @@ def getBusType(bus):  # bus type (1 - PQ bus, 2 - PV bus, 3 - reference bus, 4 -
 
 def newtonpf_I_polar(Ybus, P0, Q0, U0, theta0, pv, pq, max_it=10, tol=1e-8):
     pq_pv = np.concatenate([pq, pv])
-    # print("pq_pv", pq_pv)
 
     P0_cut = P0[pq_pv]
     Q0_pq = Q0[pq]
@@ -207,18 +201,17 @@ if __name__ == "__main__":
     try:
         case = parse_matpower_case('case14.m')
         print("解析成功！")
-        print("\nBus数据示例:")
-        print(len(case['bus']))  # 打印前两行bus数据
     except Exception as e:
         print(f"解析失败: {str(e)}")
-
     baseMVA = case['baseMVA']
     bus = case['bus']
     gen = case['gen']
     branch = case['branch']
+
     pq, pv, ref = getBusType(bus)
-    nn = bus.shape[0]  # 节点数量
+
     # 初始化P、Q、U、theta
+    nn = bus.shape[0]  # 节点数量
     P0 = np.zeros(nn)
     Q0 = np.zeros(nn)
     for i in range(len(gen)):
@@ -230,11 +223,12 @@ if __name__ == "__main__":
         Q0[int(gen[i, GEN_BUS] - 1)] += gen[i, QG]
     for i in range(len(bus)):
         Q0[int(bus[i, BUS_I] - 1)] -= bus[i, QD]
-
     P0 = P0 / baseMVA
     Q0 = Q0 / baseMVA
+
     print("P0", P0)
     print("Q0", Q0)
+
     U0 = np.zeros(nn)
     theta0 = np.zeros(nn)
     U0 = bus[:, VM]
@@ -253,13 +247,13 @@ if __name__ == "__main__":
 
     print("_____________P_______________")
     for i in range(len(P)):
-        print(i, P[i])
+        print(i+1, P[i])
     print("_____________Q_______________")
     for i in range(len(Q)):
-        print(i, Q[i])
+        print(i+1, Q[i])
     print("_____________U_______________")
     for i in range(len(U0_cal)):
-        print(i, U0_cal[i])
+        print(i+1, U0_cal[i])
     print("_____________theta_______________")
     for i in range(len(theta0_cal)):
-        print(i, theta0_cal[i])
+        print(i+1, theta0_cal[i])
