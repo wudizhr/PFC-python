@@ -114,11 +114,6 @@ def newtonpf_I_polar(Ybus, P0, Q0, U0, theta0, pv, pq, max_it=10, tol=1e-8):
     B = np.imag(Ybus)
 
     for epoch in range(max_it):
-        theta0_ij = np.zeros((len(theta0), len(theta0)))
-        for i in range(len(theta0)):
-            for j in range(len(theta0)):
-                theta0_ij[i][j] = theta0[i] - theta0[j]
-
         P = np.zeros(n)
         Q = np.zeros(n)
         for i in range(n):
@@ -128,9 +123,7 @@ def newtonpf_I_polar(Ybus, P0, Q0, U0, theta0, pv, pq, max_it=10, tol=1e-8):
                 Q[i] += U0[i] * U0[j] * (G[i, j] * np.sin(theta_ij) - B[i, j] * np.cos(theta_ij))
 
         d_P = P0_cut - P[pq_pv]
-        # print("d_P", d_P)
         d_Q = Q0_cut - Q[pq]
-        # print("d_Q", d_Q)
 
         loss = abs(max(np.max(d_P), np.max(d_Q)))
         print("当前迭代次数：", epoch, "当前误差：", loss)
@@ -183,15 +176,13 @@ def newtonpf_I_polar(Ybus, P0, Q0, U0, theta0, pv, pq, max_it=10, tol=1e-8):
             [M, L]
         ])
         # print("J", J)
-
         F = np.concatenate([d_P, d_Q])
         # print("J", J.shape, "F", F.shape)
         dx = np.linalg.solve(-J, F)
         # print("dx", dx)
-
         theta0[pq] += dx[0:n_pq]
         theta0[pv] += dx[n_pq:n_pq + n_pv]
-        U0[pq] += (dx[n_pq + n_pv:])
+        U0[pq] += (dx[n_pq + n_pv:]) * U0[pq]
         # print("dU", (dx[n_pq + n_pv:]))
 
     return U0, theta0, P, Q
@@ -251,9 +242,9 @@ if __name__ == "__main__":
     print("_____________Q_______________")
     for i in range(len(Q)):
         print(i+1, Q[i])
-    print("_____________U_______________")
-    for i in range(len(U0_cal)):
-        print(i+1, U0_cal[i])
     print("_____________theta_______________")
     for i in range(len(theta0_cal)):
         print(i+1, theta0_cal[i])
+    print("_____________U_______________")
+    for i in range(len(U0_cal)):
+        print(i+1, U0_cal[i])
